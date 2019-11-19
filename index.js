@@ -1,17 +1,25 @@
+// slide 60 - create a new teams database to use in place of the teams.json file
+
 const express = require('express')
-//creating an instance of an express app
 const app = express()
-//imports read only data file
+//I don't need this anymore
 const teams = require('./teams.json')
-//takes string and turns it into json
 const bodyParser = require('body-parser')
 
-//any request that matches the path
+const models = require('./models')
+
+
 app.get('/teams', (req, res) => {
-    res.send(teams)
+    //use the TeamsModel here with the findAll() function (slide 56)
+    res.send()
 })
 
 app.get('/teams/:filter', (req, res) => {
+    //JR's code sni ppet - he will help with this later
+    const match = await models.Teams.findOne({
+        where: { [Op.or]: [{ id: identifier }, { abbreviation: identifier }] }
+      })
+    //use the TeamsModel here with the findOne() function (slide 57)
     let rpf = req.params.filter
     let specificTeam = teams.filter((team) => {
         
@@ -22,6 +30,7 @@ app.get('/teams/:filter', (req, res) => {
 })
 
 app.post('/teams', bodyParser.json(), (req, res) => {
+    //use the TeamsModel here (slide 58)
     const body = req.body
 
     if (!body.id || !body.location || !body.mascot || !body.abbreviation || !body.conference || !body.division) {
