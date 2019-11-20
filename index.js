@@ -1,48 +1,56 @@
-// slide 60 - create a new teams database to use in place of the teams.json file
-
 const express = require('express')
 const app = express()
-//I don't need this anymore
-const teams = require('./teams.json')
 const bodyParser = require('body-parser')
-
 const models = require('./models')
+const Op = require('sequelize').Op //sequelize operators
 
 
-app.get('/teams', (req, res) => {
-    //use the TeamsModel here with the findAll() function (slide 56)
-    res.send()
+app.get('/teams', async (req, res) => {
+    const teams = await models.Teams.findAll()
+    res.send(teams)
 })
 
-app.get('/teams/:filter', (req, res) => {
-    //JR's code sni ppet - he will help with this later
+app.get('/teams/:identifier', async (req, res) => {
+    const {
+        identifier
+    } = req.params
     const match = await models.Teams.findOne({
-        where: { [Op.or]: [{ id: identifier }, { abbreviation: identifier }] }
-      })
-    //use the TeamsModel here with the findOne() function (slide 57)
-    let rpf = req.params.filter
-    let specificTeam = teams.filter((team) => {
-        
-        return team.id == rpf || team.abbreviation === rpf || team.division == rpf
+        where: {
+            [Op.or]: [{
+                id: identifier
+            }, {
+                abbreviation: identifier
+            }, {
+                division: identifier
+            }]
+        }
     })
-//return only 
-    res.send(specificTeam)
+
+    if (match) {
+        res.send(match)
+    } else {
+        res.status(404).send('The following attributes are required: id, abbreviation, division')
+    }
+
 })
 
-app.post('/teams', bodyParser.json(), (req, res) => {
-    //use the TeamsModel here (slide 58)
-    const body = req.body
+app.post('/teams', bodyParser.json(), async (req, res) => {
+    const { id, location, slug, mascot, abbreviation, conference, division } = req.body
 
-    if (!body.id || !body.location || !body.mascot || !body.abbreviation || !body.conference || !body.division) {
+    if (!id || !location || !mascot || !abbreviation || !conference || !division) {
         res.status(400).send('The following attributes are required: id, location, mascot, abbreviation, conference, division')
+    } 
+    
+    models.Teams.findOne({where: {mascot}}).then((team) => {
+        if (!team) {
+            res.status(400).send(`Unknown team slug: ${mascot}`)
     } else {
-
-        let newTeams = teams.concat(body)
-        console.log({
-            newTeams
+        models.Teams.create({location, slug, mascot, abbreviation, conference, division}).then((newTeam) => {
+        res.status(201).send(newTeam)
+        console.log({newTeam})
         })
-        res.status(201).send(newTeams)
     }
+})
 })
 
 app.all('*', (req, res) => {
